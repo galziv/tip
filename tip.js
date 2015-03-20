@@ -12,10 +12,10 @@
             active: true,
             radius: '50',
             color: 'orange',
-            duration: 2000
+            duration: 1000
         },
         tooltip: {
-            border: 'solid 1px orange',
+            border: 'solid 5px orange',
             orientation: 'bottom',
 			'background-color': 'gray',
 			color: 'orange'
@@ -58,23 +58,47 @@
         });
     };
 
-    var createTooltip = function ($element, boxShadow, backgroundColor, color) {
+    var generateTooltipByOrientation = function($element, orientation, guid, backgroundColor){
+
+		var html = '<div id="' + guid + '" style="position: absolute;display: none;">';
+		var triangle = '<div style="width:0px; margin:0 auto;border-' + orientation + ': solid 5px ' + backgroundColor + ';border-left: solid 5px transparent;border-right: solid 5px transparent;"></div>'
+		var content = '<div style="border: solid 1px  ' + backgroundColor + ';background-color: ' + backgroundColor + '; border-radius: 4px;padding: 4px;">' + $element.attr('tip-content') + '</div>';
+
+		if(orientation == 'bottom'){
+			html+= triangle + content;
+		} else if(orientation == 'top'){
+			html+= content + triangle;
+		}
+            
+            
+        html += '</div>';
+
+        return html;
+
+    }
+
+    var createTooltip = function ($element, boxShadow, backgroundColor, color, orientation) {
 
         var guid = generateGuid();
-
-        var html = '\
-        <div id="' + guid + '" style="position: absolute;display: none;">\
-            <div style="width:0px; margin:0 auto;border-bottom: solid 5px ' + backgroundColor + ';border-left: solid 5px transparent;border-right: solid 5px transparent;">\
-            </div>\
-            <div style="border: solid 1px  ' + backgroundColor + ';background-color: ' + backgroundColor + '; border-radius: 4px;padding: 2px;">' + $element.attr('tip-content') +
-            '</div>\
-        </div>';
+		var elementTipOrientation = $element.attr('tip-orientation');
+		orientation = elementTipOrientation || orientation;
+		
+        var html = generateTooltipByOrientation($element, orientation, guid, backgroundColor);
 
         $(document.body).append(html);
         var $tooltip = $("#" + guid);
 
-        $tooltip.position({ my: 'center top', at: 'center bottom', of: $element })
-        		.css('color', color);
+        switch(orientation){
+			case "bottom":
+				$tooltip.position({ my: 'center top', at: 'center bottom', of: $element });
+				break;
+			case "top":
+				$tooltip.position({ my: 'center bottom', at: 'center top', of: $element });
+				break;
+		}
+		
+		// this is done here since position() overwrites style
+		$tooltip.css('color', color);
 
         $element.attr('tip-guid', guid);
 
@@ -96,14 +120,17 @@
         var hasHeartbeat = true;
 
         $element.css({
-            'transition': 'box-shadow ' + duration + 'ms',
+            'transition': 'box-shadow ' + duration + 'ms cubic-bezier(0,0,0.58,1)',
             'box-shadow': boxShadow
         });
 
         var intervalId = setInterval(function () {
 
+			var splitted = boxShadow.split(' ');
+			var boxShadowEnd = splitted[0] + ' ' + splitted[1] + ' 5px ' + splitted[3];
+
             if (hasHeartbeat || $element.attr('tip-mouseover') != undefined) {
-                $element.css('box-shadow', '');
+                $element.css('box-shadow', boxShadowEnd);
             } else {
                 $element.css('box-shadow', boxShadow);
             }
@@ -128,6 +155,7 @@
         var heartbeatDuration = getOption(options, 'heartbeat', 'duration');
 		var tooltipBackgroundColor = getOption(options, 'tooltip', 'background-color');
 		var tooltipColor = getOption(options, 'tooltip', 'color');
+		var tooltipOrientation = getOption(options, 'tooltip', 'orientation');
 		
 
         var boxShadow = '0px 0px ' + heartbeatRadius + 'px ' + heartbeatColor;
@@ -144,7 +172,7 @@
                 setHeartbeat($self, boxShadow, heartbeatDuration);
             }
 
-            createTooltip($self, boxShadow, tooltipBackgroundColor, tooltipColor);
+            createTooltip($self, boxShadow, tooltipBackgroundColor, tooltipColor, tooltipOrientation);
         });
 
         $(document.body).css('cursor', 'help');
