@@ -22,22 +22,31 @@
         }
     };
 
-    var usedOptions = {};
-
-    var backupBorder = function(element){
+    var backupStyle = function(element){
 		
 		var border = window.getComputedStyle(element).border;
 		var boxShadow = window.getComputedStyle(element).boxShadow;
 		var transition = window.getComputedStyle(element).transition;
+		var cursor = window.getComputedStyle(element).cursor;
 
-		element.tipBackup = { border: border, boxShadow: boxShadow, transition: transition };
+		element.tipBackup = { 
+			border: border, 
+			boxShadow: boxShadow, 
+			transition: transition, 
+			cursor: cursor
+		};
     }
 
     var restoreBackup = function($element){
 		
 		var element = $element.get(0);
-		$element.css({ border: element.tipBackup.border, 'box-shadow': element.tipBackup.boxShadow, transition: element.tipBackup.transition });
 
+		$element.css({ 
+			border: element.tipBackup.border,
+			'box-shadow': element.tipBackup.boxShadow, 
+			transition: element.tipBackup.transition, 
+			cursor: element.tipBackup.cursor
+		});
     }
 
     var getOption = function (options, property, subProperty) {
@@ -82,7 +91,7 @@
         var guid = generateGuid();
 		var elementTipOrientation = $element.attr('tip-orientation');
 		orientation = elementTipOrientation || orientation;
-		
+
         var html = generateTooltipByOrientation($element, orientation, guid, backgroundColor);
 
         $(document.body).append(html);
@@ -164,15 +173,18 @@
 
             var $self = $(this);
 
-            backupBorder($self.get(0));
+            backupStyle($self.get(0));
 
             $self.css({ border: borderStyle + " " + borderWidth + " " + borderColor });
 
             if (heartbeatActive) {
                 setHeartbeat($self, boxShadow, heartbeatDuration);
             }
-
-            createTooltip($self, boxShadow, tooltipBackgroundColor, tooltipColor, tooltipOrientation);
+			
+			if($self.attr('tip-content')){
+				$self.css('cursor', 'help');
+            	createTooltip($self, boxShadow, tooltipBackgroundColor, tooltipColor, tooltipOrientation);
+            }
         });
 
         $(document.body).css('cursor', 'help');
